@@ -1,0 +1,38 @@
+diff --git a/src/physics/cam/clubb_intr.F90 b/src/physics/cam/clubb_intr.F90
+--- a/src/physics/cam/clubb_intr.F90
++++ b/src/physics/cam/clubb_intr.F90
+@@ -22,11 +22,14 @@
+   use physconst,     only: rair, cpair, gravit, latvap, latice, zvir, rh2o, karman
+   use spmd_utils,    only: masterproc 
+   use constituents,  only: pcnst, cnst_add
+   use pbl_utils,     only: calc_ustar, calc_obklen
+   use ref_pres,      only: top_lev => trop_cloud_top_lev  
+-  use zm_conv_intr,  only: zmconv_microp
++   use zm_conv_intr,  only: zmconv_microp
++! DV: Switches for ice contributions to MPCs - Start
++   use micro_dv_nml, only: detrainment_ramp_liq
++! DV: Switches for ice contributions to MPCs - End
+   implicit none
+ 
+   private
+   save
+ 
+@@ -2347,11 +2350,17 @@
+          if( state1%t(i,k) > 268.15_r8 ) then
+             dum1 = 0.0_r8
+          elseif ( state1%t(i,k) < 238.15_r8 ) then
+             dum1 = 1.0_r8
+          else
+-            dum1 = ( 268.15_r8 - state1%t(i,k) ) / 30._r8 
++! DV: Switches for ice contributions to MPCs - Start
++            if( detrainment_ramp_liq ) then
++                dum1 = 0.0_r8
++            else
++                dum1 = ( 268.15_r8 - state1%t(i,k) ) / 30._r8  ! DV in deep convection and shallow convection 30dg ramp
++            endif
++! DV: Switches for ice contributions to MPCs - End
+          endif
+ 
+          if (zmconv_microp) then
+             ptend_loc%q(i,k,ixcldliq) = dlfzm(i,k) + dlf2(i,k) * ( 1._r8 - dum1 )
+             ptend_loc%q(i,k,ixcldice) = difzm(i,k) + dlf2(i,k) * dum1

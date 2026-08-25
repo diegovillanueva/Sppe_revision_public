@@ -1,0 +1,133 @@
+diff --git a/src/physics/cam/micro_mg2_0.F90 b/src/physics/cam/micro_mg2_0.F90
+--- a/src/physics/cam/micro_mg2_0.F90
++++ b/src/physics/cam/micro_mg2_0.F90
+@@ -131,10 +131,15 @@
+      ar, br, &
+      as, bs, &
+      mi0, &
+      rising_factorial
+ 
++use micro_dv_nml, only: micro_mg_ice_berg_ice_factor, &
++                        micro_mg_ice_berg_snow_factor, &
++                        naai_het_also_in_mpc, detrainment_ramp_liq, &
++                        enable_nimax, auto_liq_factor, riming_factor
++
+ implicit none
+ private
+ save
+ 
+ public :: &
+@@ -1113,11 +1118,13 @@
+ 
+   !-------------------------------------------------------
+ 
+   if (do_cldice) then
+      where (naai > 0._r8 .and. t < icenuct .and. &
+-          relhum*esl/esi > 1.05_r8)
++          relhum*esl/esi > 1.05_r8 .and. &
++            ( naai_het_also_in_mpc .or. t < 233.15_r8 ))
++               !if naai_het_also_in_mpc is false; proceed only if cirrus temp
+ 
+         !if NAAI > 0. then set numice = naai (as before)
+         !note: this is gridbox averaged
+         nnuccd = (naai-ni/icldm)/mtime*icldm
+         nnuccd = max(nnuccd,0._r8)
+@@ -1331,15 +1338,20 @@
+      ! Get size distribution parameters for cloud ice
+ 
+      call size_dist_param_basic(mg_ice_props, qiic(:,k), niic(:,k), &
+           lami(:,k), mgncol, n0=n0i(:,k))
+ 	  
+-     ! Alternative autoconversion 
++     ! Alternative autoconversion
+      if (do_sb_physics) then
+        call sb2001v2_liq_autoconversion(pgam(:,k),qcic(1:mgncol,k),ncic(:,k), &
+-            qric(:,k),rho(:,k),relvar(:,k),prc(:,k),nprc(:,k),nprc1(:,k), mgncol)     
+-     endif	  
++            qric(:,k),rho(:,k),relvar(:,k),prc(:,k),nprc(:,k),nprc1(:,k), mgncol)
++     endif
++
++     ! Scale liquid autoconversion rate and number by tuning factor
++     prc(:,k)   = prc(:,k)   * auto_liq_factor
++     nprc(:,k)  = nprc(:,k)  * auto_liq_factor
++     nprc1(:,k) = nprc1(:,k) * auto_liq_factor
+ 
+      !.......................................................................
+      ! Autoconversion of cloud ice to snow
+      ! similar to Ferrier (1994)
+ 
+@@ -1484,10 +1496,14 @@
+ 
+      call accrete_cloud_water_snow(t(:,k), rho(:,k), asn(:,k), uns(:,k), mu(:,k), &
+           qcic(1:mgncol,k), ncic(:,k), qsic(:,k), pgam(:,k), lamc(:,k), lams(:,k), n0s(:,k), &
+           psacws(:,k), npsacws(:,k), mgncol)
+ 
++     ! Scale riming rate (and number) by tuning factor before H-M so splinter production is also scaled
++     psacws(:,k)  = psacws(:,k)  * riming_factor
++     npsacws(:,k) = npsacws(:,k) * riming_factor
++
+      if (do_cldice) then
+         call secondary_ice_production(t(:,k), psacws(:,k), msacwi(:,k), nsacwi(:,k), mgncol)
+      else
+         nsacwi(:,k) = 0.0_r8
+         msacwi(:,k) = 0.0_r8
+@@ -1526,21 +1542,20 @@
+ 
+      call bergeron_process_snow(t(:,k), rho(:,k), dv(:,k), mu(:,k), sc(:,k), &
+           qvl(:,k), qvi(:,k), asn(:,k), qcic(1:mgncol,k), qsic(:,k), lams(:,k), n0s(:,k), &
+           bergs(:,k), mgncol)
+ 
+-     bergs(:,k)=bergs(:,k)*micro_mg_berg_eff_factor
++     !bergs(:,k)=bergs(:,k)*micro_mg_berg_eff_factor
++     bergs(:,k)=bergs(:,k)*micro_mg_berg_eff_factor*micro_mg_ice_berg_snow_factor
+ 
+      !+++PMC 12/3/12 - NEW VAPOR DEP/SUBLIMATION GOES HERE!!!
+      if (do_cldice) then
+ 
+         call ice_deposition_sublimation(t(:,k), q(:,k), qi(:,k), ni(:,k), &
+              icldm(:,k), rho(:,k), dv(:,k), qvl(:,k), qvi(:,k), &
+              berg(:,k), vap_dep(:,k), ice_sublim(:,k), mgncol)
+-
+-        berg(:,k)=berg(:,k)*micro_mg_berg_eff_factor
+-
++        berg(:,k)=berg(:,k)*micro_mg_berg_eff_factor*micro_mg_ice_berg_ice_factor
+         where (ice_sublim(:,k) < 0._r8 .and. qi(:,k) > qsmall .and. icldm(:,k) > mincld)
+            nsubi(:,k) = sublim_factor*ice_sublim(:,k) / qi(:,k) * ni(:,k) / icldm(:,k)
+ 
+         elsewhere
+            nsubi(:,k) = 0._r8
+@@ -1969,13 +1984,15 @@
+         ! make sure that ni at advanced time step does not exceed
+         ! maximum (existing N + source terms*dt), which is possible if mtime < deltat
+         ! note that currently mtime = deltat
+         !================================================================
+ 
+-        if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
++        ! disable nimax
++
++        if (enable_nimax.and.do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
+            nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat)
+-        end if
++         end if
+ 
+      end do
+ 
+      ! End of "administration" loop
+ 
+@@ -2708,11 +2725,15 @@
+                  ! now add to tendencies, partition between liquid and ice based on te
+                  !-------------------------------------------------------
+               else if (ttmp < 238.15_r8) then
+                  dum1=1.0_r8
+               else
+-                 dum1=(268.15_r8-ttmp)/30._r8
++                if( detrainment_ramp_liq ) then
++                    dum1 = 0.0_r8
++                else
++                    dum1=(268.15_r8-ttmp)/30._r8
++                endif
+               end if
+ 
+               dum = (qtmp-qvn)/(1._r8+(xxls*dum1+xxlv*(1._r8-dum1))**2 &
+                    *qvn/(cpp*rv*ttmp**2))/deltat
+               qctend(i,k)=qctend(i,k)+dum*(1._r8-dum1)

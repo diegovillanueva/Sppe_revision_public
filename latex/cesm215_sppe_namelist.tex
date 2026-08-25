@@ -1,0 +1,606 @@
+\providecommand{\sppepatchroot}{../data_code/cesm215/Sppe_patch}
+
+\clearpage
+\section*{\ppficon{1f9ca} \ppficon{2699}
+% 🧊⚙
+Appendix G: SPPE microphysics namelist controls in CESM2.1.5}
+% 🧊⚙
+\addcontentsline{toc}{section}{\ppficon{1f9ca} \ppficon{2699}
+% 🧊⚙
+Appendix G: SPPE microphysics namelist controls in CESM2.1.5}
+% 🧊⚙
+\label{app:sppe-namelist-controls}
+
+\ppficon{1f9ed} \ppficon{1f4d8}
+% 🧭📘
+This appendix explains the fixed cloud-microphysics settings used by the CESM2.1.5 perturbed-parameter ensemble (SPPE) and connects each setting to the calculation that it changes.
+% 🧭📘
+
+\ppficon{1f517} \ppficon{1f4c2}
+% 🔗📂
+The complete patch bundle and its validation workflow are documented in \href{run:\sppepatchroot/README.md}{\nolinkurl{Sppe_patch/README.md}}, while the reference namelist is preserved as \href{run:\sppepatchroot/namelists/user_nl_cam.sppe}{\nolinkurl{namelists/user_nl_cam.sppe}}.
+% 🔗📂
+
+\ppficon{1f9e9} \ppficon{1f4e5}
+% 🧩📥
+All controls below except \texttt{micro\_mg\_num\_steps} enter the added \texttt{micro\_dv\_nl} group, are read by \texttt{micro\_dv\_readnl}, and are broadcast from the master MPI task before the physics uses them.
+% 🧩📥
+
+\ppficon{1f504} \ppficon{23f1}
+% ⏱🔄
+The native \texttt{micro\_mg\_num\_steps} setting instead belongs to CAM's existing \texttt{micro\_mg\_nl} group.
+% ⏱🔄
+
+\subsection*{\ppficon{2744} \ppficon{1f501}
+% ❄🔁
+Hallett--Mossop secondary ice}
+% ❄🔁
+
+\paragraph*{\ppficon{1f535} \ppficon{1f9ca}
+% 🔵🧊
+\texttt{factor\_HM = 0}.}
+% 🔵🧊
+\ppficon{1f535} \ppficon{1f9ca}
+% 🔵🧊
+This real-valued factor multiplies the Hallett--Mossop ice-splinter number source produced when snow rims cloud droplets in the active temperature window.
+% 🔵🧊
+
+\ppficon{1f9ea} \ppficon{1f4c9}
+% 🧪📉
+Recent controlled experiments failed to reproduce efficient Hallett--Mossop rime splintering and found no evidence of the hundreds of secondary ice particles per milligram of rime reported in early experiments, motivating its removal here \href{https://doi.org/10.5194/acp-24-5247-2024}{(Seidel et al., 2024)}.
+% 🧪📉
+
+\paragraph*{\ppficon{1f7e3} \ppficon{1f6d1}
+% 🟣🛑
+\texttt{onoff\_sip = .false.}.}
+% 🟣🛑
+\ppficon{1f7e3} \ppficon{1f6d1}
+% 🟣🛑
+This logical switch prevents both branches of the temperature-dependent Hallett--Mossop calculation from running, so the secondary-ice number source is zero.
+% 🟣🛑
+
+\ppficon{1f6e1} \ppficon{2705}
+% 🛡✅
+Setting both controls to zero or false is intentionally redundant: either setting suppresses the patched source, and together they make the disabled SPPE baseline explicit.
+% 🛡✅
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+The relevant excerpt from \texttt{micro\_mg\_utils.F90.patch} is:
+% 💻🔍
+
+\begin{verbatim}
+if ((t(i) < 270.16_r8) .and. (t(i) >= 268.16_r8) .and. &
+    onoff_sip) then
+   nsacwi(i) = 3.5e8_r8*(270.16_r8-t(i))/2.0_r8 &
+        * psacws(i)*factor_HM
+else if ((t(i) < 268.16_r8) .and. (t(i) >= 265.16_r8) .and. &
+         onoff_sip) then
+   nsacwi(i) = 3.5e8_r8*(t(i)-265.16_r8)/3.0_r8 &
+        * psacws(i)*factor_HM
+else
+   nsacwi(i) = 0.0_r8
+end if
+\end{verbatim}
+
+\subsection*{\ppficon{1f4a7} \ppficon{2744}
+% 💧❄
+Freezing-point depression}
+% 💧❄
+
+\paragraph*{\ppficon{1f4a7} \ppficon{2744}
+% 💧❄
+\texttt{depr\_point\_frz = .false.}.}
+% 💧❄
+\ppficon{1f535} \ppficon{1f9ea}
+% 🔵🧪
+CAM normally uses aerosol water activity multiplied by ice supersaturation to decide whether solute freezing-point depression prevents black-carbon or dust immersion freezing and to modify the critical germ radius.
+% 🔵🧪
+
+\ppficon{1f7e2} \ppficon{1f513}
+% 🟢🔓
+The patch initializes all three aerosol-pathway flags as active and applies that water-activity gate only when \texttt{depr\_point\_frz} is true; the SPPE false setting therefore bypasses the solubility gate rather than disabling immersion freezing.
+% 🟢🔓
+
+\ppficon{1f4a7} \ppficon{1f9ca}
+% 💧🧊
+Immersion freezing occurs after an aerosol particle has activated and become immersed in a cloud droplet, so the droplet water activity should be close to one and freezing-point depression should not suppress this pathway strongly.
+% 💧🧊
+
+\ppficon{1f30a} \ppficon{1f9ea}
+% 🌊🧪
+SPPE sensitivity tests showed that retaining the depression term artificially suppressed immersion freezing because CAM treats aerosol as internally mixed; the bias was especially apparent in regions dominated by highly hygroscopic aerosol, including the Southern Ocean.
+% 🌊🧪
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+The dust-a1 branch in \texttt{hetfrz\_classnuc.F90.patch} illustrates the behavior:
+% 💻🔍
+
+\begin{verbatim}
+do_bc   = .true.
+do_dst1 = .true.
+do_dst3 = .true.
+
+if (depr_point_frz) then
+   if (aw(id_dst1)*supersatice > 1._r8) then
+      rgimm_dust_a1 = 2*vwice*sigma_iw / &
+           (kboltz*t*LOG(aw(id_dst1)*supersatice))
+   else
+      do_dst1 = .false.
+   end if
+end if
+\end{verbatim}
+
+\subsection*{\ppficon{1f9ca} \ppficon{1f522}
+% 🧊🔢
+Ice-number and dust-INP limits}
+% 🧊🔢
+
+\paragraph*{\ppficon{1f9ca} \ppficon{1f513}
+% 🧊🔓
+\texttt{enable\_nimax = .false.}.}
+% 🧊🔓
+\ppficon{1f7e0} \ppficon{1f513}
+% 🟠🔓
+This setting bypasses the legacy MG1/MG2 condition that clips a positive cloud-ice number tendency when the predicted ice number would exceed \texttt{nimax}.
+% 🟠🔓
+
+\ppficon{26a0} \ppficon{1f4cc}
+% ⚠📌
+The legacy limiter is an unphysical, ad hoc constraint that was disabled in newer corrected CESM configurations; the problem and the NoNimax replacement are discussed by \href{https://doi.org/10.1029/2025MS004967}{Duffy et al. (2025)} and \href{https://doi.org/10.1029/2021MS002776}{Zhu et al. (2022)}.
+% ⚠📌
+
+\ppficon{1f9ca} \ppficon{1f6e1}
+% 🧊🛡
+This setting does not install the later PUMASv1 replacement cap of 100\,cm\textsuperscript{$-3$}; instead, \texttt{limfacdu} provides a process-level limit on the dust immersion-freezing source.
+% 🧊🛡
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+Both MG1 and MG2 receive the same guard, shown here by the MG2 excerpt from \nolinkurl{micro_mg2_0.F90.patch}:
+% 💻🔍
+
+\begin{verbatim}
+if (enable_nimax .and. do_cldice .and. nitend(i,k) > 0._r8 &
+    .and. ni(i,k) + nitend(i,k)*deltat > nimax(i,k)) then
+   nitend(i,k) = max(0._r8, &
+        (nimax(i,k)-ni(i,k))/deltat)
+end if
+\end{verbatim}
+
+\paragraph*{\ppficon{1f7e1} \ppficon{1f4c9}
+% 🟡📉
+\texttt{limfacdu = 0.05}.}
+% 🟡📉
+\ppficon{1f7e1} \ppficon{1f4c9}
+% 🟡📉
+This dimensionless factor caps the dust immersion-freezing source at 5\% of the available dust number per call before CAM takes the minimum of that cap and the classical-nucleation-theory rate.
+% 🟡📉
+
+\ppficon{1f4d6} \ppficon{1f517}
+% 📖🔗
+The choice follows the 5\% dust-INP limit described in Sect.~2.2.2 of \href{https://doi.org/10.5194/gmd-16-1735-2023}{Gettelman et al. (2023)} and replaces the broad ice-number limiter with a limit applied directly to the relevant ice-nucleation source.
+% 📖🔗
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+One of the cloud-borne dust branches in \texttt{hetfrz\_classnuc.F90.patch} is:
+% 💻🔍
+
+\begin{verbatim}
+if (do_dst1) frzduimm = frzduimm + MIN( &
+     limfacdu*total_cloudborne_aer_num(id_dst1)/deltat, &
+     total_cloudborne_aer_num(id_dst1)/deltat &
+     *(1._r8-exp(-Jimm_dust_a1*deltat)))
+\end{verbatim}
+
+\subsection*{\ppficon{23f1} \ppficon{1f504}
+% ⏱🔄
+Numerical substepping and cirrus isolation}
+% ⏱🔄
+
+\paragraph*{\ppficon{23f1} \ppficon{1f504}
+% ⏱🔄
+\texttt{micro\_mg\_num\_steps = 8}.}
+% ⏱🔄
+\ppficon{1f535} \ppficon{23f1}
+% ⏱🔵
+This native CAM control advances MG microphysics eight times during each MG call and passes \texttt{dtime/8} to every substep rather than using one long microphysical step.
+% ⏱🔵
+
+\ppficon{1f9ee} \ppficon{1f4d0}
+% 🧮📐
+In the archived SPPE case, the 1800\,s atmospheric interval is first divided into three CLUBB--macrophysics--microphysics steps and then into eight MG steps, giving an effective MG step of 75\,s.
+% 🧮📐
+
+\ppficon{1f4d6} \ppficon{1f517}
+% 📖🔗
+This is the Mg2Sub8 configuration for which \href{https://doi.org/10.1029/2021MS002776}{Zhu et al. (2022)} reported convergence of cloud-ice number and shortwave cloud feedback.
+% 📖🔗
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+The control is native to \texttt{micro\_mg\_cam.F90}, not introduced by the curated patches:
+% 💻🔍
+
+\begin{verbatim}
+num_steps = micro_mg_num_steps
+
+do it = 1, num_steps
+   call micro_mg_tend2_0( &
+        mgncol, nlev, dtime/num_steps, &
+        ... )
+end do
+\end{verbatim}
+
+\paragraph*{\ppficon{1f7e3} \ppficon{1f6a7}
+% 🟣🚧
+\texttt{naai\_het\_also\_in\_mpc = .false.}.}
+% 🟣🚧
+\ppficon{1f7e3} \ppficon{1f6a7}
+% 🟣🚧
+This switch prevents the aerosol-aware ice-number target \texttt{naai} from being imposed at mixed-phase temperatures; with false, that source is allowed only below 233.15\,K, approximately $-40\,^{\circ}$C.
+% 🟣🚧
+
+\ppficon{1f9ca} \ppficon{27a1}
+% 🧊➡
+The setting isolates the cirrus use of \texttt{naai} and does not disable the separate heterogeneous mixed-phase freezing tendencies.
+% 🧊➡
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+The patched condition in \texttt{micro\_mg2\_0.F90.patch} is:
+% 💻🔍
+
+\begin{verbatim}
+where (naai > 0._r8 .and. t < icenuct .and. &
+       relhum*esl/esi > 1.05_r8 .and. &
+       (naai_het_also_in_mpc .or. t < 233.15_r8))
+   nnuccd = (naai-ni/icldm)/mtime*icldm
+   nnuccd = max(nnuccd,0._r8)
+end where
+\end{verbatim}
+
+\subsection*{\ppficon{1f9ea} \ppficon{1f500}
+% 🧪🔀
+Selected aerosol and freezing pathways}
+% 🧪🔀
+
+\ppficon{1f9ed} \ppficon{1f4ca}
+% 🧭📊
+The six \texttt{hclas} factors independently multiply black-carbon (\texttt{bc}) and dust (\texttt{du}) immersion (\texttt{imm}), contact (\texttt{cnt}), and deposition (\texttt{dep}) nucleation rates before the combined tendencies reach MG2.
+% 🧭📊
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+The complete routing expression added by \texttt{hetfrz\_classnuc\_cam.F90.patch} is:
+% 💻🔍
+
+\begin{verbatim}
+frzimm = hclas_bc_imm*frzbcimm + hclas_du_imm*frzduimm
+frzcnt = hclas_bc_cnt*frzbccnt + hclas_du_cnt*frzducnt
+frzdep = hclas_bc_dep*frzbcdep + hclas_du_dep*frzdudep
+\end{verbatim}
+
+\paragraph*{\ppficon{1f7e4} \ppficon{1f6d1}
+% 🟤🛑
+\texttt{hclas\_du\_dep = 0.0}.}
+% 🟤🛑
+\ppficon{1f7e4} \ppficon{1f6d1}
+% 🟤🛑
+This value removes the dust deposition-nucleation contribution from \texttt{frzdep}, retaining immersion freezing as the physically relevant dust-INP pathway in mixed-phase clouds.
+% 🟤🛑
+
+\paragraph*{\ppficon{1f7e4} \ppficon{1f6d1}
+% 🟤🛑
+\texttt{hclas\_du\_cnt = 0.0}.}
+% 🟤🛑
+\ppficon{1f7e4} \ppficon{1f6d1}
+% 🟤🛑
+This value removes the dust contact-nucleation contribution from \texttt{frzcnt}, whose atmospheric importance remains poorly constrained.
+% 🟤🛑
+
+\ppficon{1f4da} \ppficon{1f9ca}
+% 📚🧊
+The mixed-phase-cloud rationale for both dust settings follows \href{https://doi.org/10.1029/2021RG000745}{Burrows et al. (2022)}, who identify immersion freezing as the predominant primary-ice mode, deposition freezing as minor, and contact freezing as uncertain because internally mixed INPs generally activate into droplets rather than remaining interstitial.
+% 📚🧊
+
+\paragraph*{\ppficon{26ab} \ppficon{1f6d1}
+% ⚫🛑
+\texttt{hclas\_bc\_imm = 0.0}.}
+% ⚫🛑
+\ppficon{26ab} \ppficon{1f6d1}
+% ⚫🛑
+This value removes the black-carbon immersion-freezing contribution from \texttt{frzimm}.
+% ⚫🛑
+
+\paragraph*{\ppficon{26ab} \ppficon{1f6d1}
+% ⚫🛑
+\texttt{hclas\_bc\_dep = 0.0}.}
+% ⚫🛑
+\ppficon{26ab} \ppficon{1f6d1}
+% ⚫🛑
+This value removes the black-carbon deposition-nucleation contribution from \texttt{frzdep}.
+% ⚫🛑
+
+\paragraph*{\ppficon{26ab} \ppficon{1f6d1}
+% ⚫🛑
+\texttt{hclas\_bc\_cnt = 0.0}.}
+% ⚫🛑
+\ppficon{26ab} \ppficon{1f6d1}
+% ⚫🛑
+This value removes the black-carbon contact-nucleation contribution from \texttt{frzcnt}.
+% ⚫🛑
+
+\ppficon{1f5a4} \ppficon{1f30d}
+% 🖤🌍
+All three black-carbon factors are zero because black carbon makes an unimportant contribution to global INP concentrations relevant to mixed-phase clouds, with only limited regional exceptions \href{https://doi.org/10.1073/pnas.2001674117}{(Schill et al., 2020)}.
+% 🖤🌍
+
+\ppficon{1f7e2} \ppficon{1f9ca}
+% 🟢🧊
+Together with the separately specified \texttt{hclas\_du\_imm}, these five zeros isolate dust immersion freezing as the heterogeneous aerosol pathway retained and perturbed by SPPE.
+% 🟢🧊
+
+\paragraph*{\ppficon{1f535} \ppficon{1f6d1}
+% 🔵🛑
+\texttt{onoff\_contact\_freezing = .false.}.}
+% 🔵🛑
+\ppficon{1f535} \ppficon{1f6d1}
+% 🔵🛑
+This switch disables CAM's legacy internal droplet--aerosol contact-freezing routine when MG is configured without the aerosol-aware \texttt{hetfrz\_classnuc} pathway.
+% 🔵🛑
+
+\ppficon{1f6e1} \ppficon{1f9ca}
+% 🛡🧊
+Contact nucleation from \texttt{hetfrz\_classnuc} is controlled independently by \texttt{hclas\_du\_cnt} and \texttt{hclas\_bc\_cnt}, which are also zero here.
+% 🛡🧊
+
+\paragraph*{\ppficon{1f327} \ppficon{1f6d1}
+% 🌧🛑
+\texttt{rain\_freeze = .false.}.}
+% 🌧🛑
+\ppficon{1f327} \ppficon{1f6d1}
+% 🌧🛑
+This switch suppresses the Bigg-style heterogeneous freezing of rain below 269.15\,K, making its rain-to-snow mass and number tendencies zero.
+% 🌧🛑
+
+\ppficon{1f321} \ppficon{1f9ca}
+% 🌡🧊
+Rain freezing is disabled because this source is not aware of simulated INPs and instead follows an imposed temperature dependence that can mask the physical temperature dependence of INP-mediated freezing.
+% 🌡🧊
+
+\ppficon{26a0} \ppficon{2744}
+% ⚠❄
+This setting does not disable other freezing processes, such as homogeneous cloud-droplet freezing at much colder temperatures.
+% ⚠❄
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+The two logical guards added by \texttt{micro\_mg\_utils.F90.patch} are:
+% 💻🔍
+
+\begin{verbatim}
+if (qcic(i) >= qsmall .and. t(i) < 269.15_r8 .and. &
+    onoff_contact_freezing) then
+   ...
+end if
+
+if (t(i) < 269.15_r8 .and. qric(i) >= qsmall .and. &
+    rain_freeze) then
+   nnuccr(i) = pi*nric(i)*bimm &
+        *(exp(aimm*(tmelt-t(i)))-1._r8)/lamr(i)**3
+else
+   mnuccr(i) = 0._r8
+   nnuccr(i) = 0._r8
+end if
+\end{verbatim}
+
+\subsection*{\ppficon{1f4a7} \ppficon{27a1}
+% 💧➡
+Phase of detrained condensate}
+% 💧➡
+
+\paragraph*{\ppficon{1f4a7} \ppficon{27a1}
+% 💧➡
+\texttt{detrainment\_ramp\_liq = .true.}.}
+% 💧➡
+\ppficon{1f535} \ppficon{1f4a7}
+% 🔵💧
+Between 238.15 and 268.15\,K, this setting replaces the standard linear liquid--ice detrainment ramp with \texttt{dum1=0}, so the newly detrained condensate in that interval is assigned entirely to liquid rather than partitioned between liquid and ice.
+% 🔵💧
+
+\ppficon{1f321} \ppficon{1f9ca}
+% 🌡🧊
+Convectively detrained ice is therefore turned off in the mixed-phase interval because its imposed temperature ramp is not aware of simulated INPs and would mask the physical temperature dependence of INP-mediated ice formation.
+% 🌡🧊
+
+\ppficon{2744} \ppficon{1f4cd}
+% ❄📍
+Temperatures below 238.15\,K still use \texttt{dum1=1} and therefore retain all-ice detrainment, while temperatures above 268.15\,K already use all-liquid detrainment.
+% ❄📍
+
+\ppficon{1f500} \ppficon{1f6e1}
+% 🔀🛡
+The same switch is applied in \texttt{clubb\_intr.F90.patch}, \texttt{macrop\_driver.F90.patch}, and the MG2 detrainment logic so the CLUBB and non-CLUBB paths use the same phase choice.
+% 🔀🛡
+
+\ppficon{1f4bb} \ppficon{1f50d}
+% 💻🔍
+The CLUBB patch shows both the switch and the resulting phase partition:
+% 💻🔍
+
+\begin{verbatim}
+if (state1%t(i,k) > 268.15_r8) then
+   dum1 = 0.0_r8
+else if (state1%t(i,k) < 238.15_r8) then
+   dum1 = 1.0_r8
+else
+   if (detrainment_ramp_liq) then
+      dum1 = 0.0_r8
+   else
+      dum1 = (268.15_r8-state1%t(i,k))/30._r8
+   end if
+end if
+
+ptend_loc%q(i,k,ixcldliq) = dlfzm(i,k) &
+     + dlf2(i,k)*(1._r8-dum1)
+ptend_loc%q(i,k,ixcldice) = difzm(i,k) + dlf2(i,k)*dum1
+\end{verbatim}
+
+\subsection*{\ppficon{1f9ed} \ppficon{2705}
+% 🧭✅
+Combined SPPE interpretation}
+% 🧭✅
+
+\ppficon{1f7e2} \ppficon{1f9ca}
+% 🟢🧊
+Collectively, the settings retain dust immersion freezing with a 5\% dust-number cap, remove the legacy ice-number limiter, and use eight MG2 substeps for numerical convergence.
+% 🟢🧊
+
+\ppficon{1f535} \ppficon{1f4a7}
+% 🔵💧
+They also keep aerosol-aware cirrus nucleation out of mixed-phase temperatures and force detrained condensate to remain liquid throughout the mixed-phase ramp.
+% 🔵💧
+
+\ppficon{1f7e3} \ppficon{1f6d1}
+% 🟣🛑
+Secondary ice, legacy contact freezing, rain freezing, dust contact/deposition nucleation, and all three black-carbon nucleation modes are disabled in this reference configuration.
+% 🟣🛑
+
+\subsection*{\ppficon{1f4cb} \ppficon{1f9ed}
+% 📋🧭
+Decision summary}
+% 📋🧭
+
+\ppficon{1f4cb} \ppficon{1f50e}
+% 📋🔎
+Table~\ref{tab:sppe-namelist-decisions} summarizes the physical or numerical rationale for every fixed control discussed above.
+% 📋🔎
+
+\begin{longtable}{@{}>{\raggedright\arraybackslash}p{0.27\textwidth}>{\raggedright\arraybackslash}p{0.47\textwidth}>{\raggedright\arraybackslash}p{0.18\textwidth}@{}}
+\caption{\ppficon{1f4cb} \ppficon{1f9ca}
+% 📋🧊
+Fixed SPPE cloud-microphysics decisions, concise rationales, and supporting references.}\label{tab:sppe-namelist-decisions}\\
+% 📋🧊
+\toprule
+\ppficon{2699} \ppficon{2699}
+% ⚙🧭📚
+\textbf{Decision} & \ppficon{1f9ed} \textbf{Short rationale} & \ppficon{1f4da} \textbf{Reference} \\
+% ⚙🧭📚
+\midrule
+\endfirsthead
+\toprule
+\ppficon{2699} \ppficon{2699}
+% ⚙🧭📚
+\textbf{Decision} & \ppficon{1f9ed} \textbf{Short rationale} & \ppficon{1f4da} \textbf{Reference} \\
+% ⚙🧭📚
+\midrule
+\endhead
+\texttt{factor\_HM = 0} & \ppficon{1f9ea} \ppficon{1f4c9}
+% 🧪📉
+Disable an efficient HM source that recent controlled experiments failed to reproduce. & \href{https://doi.org/10.5194/acp-24-5247-2024}{Seidel et al. (2024)} \\
+% 🧪📉
+\texttt{onoff\_sip = .false.} & \ppficon{1f9ca} \ppficon{1f6d1}
+% 🧊🛑
+Redundantly ensure that the HM source cannot execute. & \href{https://doi.org/10.5194/acp-24-5247-2024}{Seidel et al. (2024)} \\
+% 🧊🛑
+\texttt{depr\_point\_frz = .false.} & \ppficon{1f4a7} \ppficon{1f513}
+% 💧🔓🧪🌊
+Avoid artificial suppression after aerosol activation, when droplet water activity should be close to one. & \textbf{process-isolation} \\
+% 💧🔓🧪🌊
+\texttt{enable\_nimax = .false.} & \ppficon{1f9ca} \ppficon{1f513}
+% 🧊🔓
+Remove the unphysical legacy ice-number limiter used in the released CESM2 microphysics. & \href{https://doi.org/10.1029/2025MS004967}{Duffy et al. (2025)}; \href{https://doi.org/10.1029/2021MS002776}{Zhu et al. (2022)} \\
+% 🧊🔓
+\texttt{limfacdu = 0.05} & \ppficon{1f7e1} \ppficon{1f4c9}
+% 🟡📉
+Replace the broad ice limiter with a 5\% dust-number cap on the immersion-freezing source. & \href{https://doi.org/10.5194/gmd-16-1735-2023}{Gettelman et al. (2023)} \\
+% 🟡📉
+\texttt{micro\_mg\_num\_steps = 8} & \ppficon{23f1} \ppficon{2705}
+% ⏱✅
+Use a converged microphysical substep length. & \href{https://doi.org/10.1029/2021MS002776}{Zhu et al. (2022)} \\
+% ⏱✅
+\texttt{naai\_het\_also\_in\_mpc = .false.} & \ppficon{1f9ca} \ppficon{1f6a7}
+% 🧊🚧🖥🧩
+Prevent the cirrus ice-number target from leaking into mixed-phase clouds. & \textbf{process-isolation} \\
+% 🧊🚧🖥🧩
+\texttt{hclas\_du\_dep = 0.0} & \ppficon{1f7e4} \ppficon{1f6d1}
+% 🟤🛑
+Remove the minor deposition pathway from mixed-phase dust nucleation. & \href{https://doi.org/10.1029/2021RG000745}{Burrows et al. (2022)} \\
+% 🟤🛑
+\texttt{hclas\_du\_cnt = 0.0} & \ppficon{1f7e4} \ppficon{1f6d1}
+% 🟤🛑
+Remove the poorly constrained dust contact-freezing pathway. & \href{https://doi.org/10.1029/2021RG000745}{Burrows et al. (2022)} \\
+% 🟤🛑
+\texttt{hclas\_bc\_imm = 0.0} & \ppficon{1f5a4} \ppficon{1f6d1}
+% 🖤🛑
+Remove the globally unimportant black-carbon immersion source. & \href{https://doi.org/10.1073/pnas.2001674117}{Schill et al. (2020)} \\
+% 🖤🛑
+\texttt{hclas\_bc\_dep = 0.0} & \ppficon{1f5a4} \ppficon{1f6d1}
+% 🖤🛑
+Remove the globally unimportant black-carbon deposition source. & \href{https://doi.org/10.1073/pnas.2001674117}{Schill et al. (2020)} \\
+% 🖤🛑
+\texttt{hclas\_bc\_cnt = 0.0} & \ppficon{1f5a4} \ppficon{1f6d1}
+% 🖤🛑
+Remove the globally unimportant black-carbon contact source. & \href{https://doi.org/10.1073/pnas.2001674117}{Schill et al. (2020)} \\
+% 🖤🛑
+\texttt{onoff\_contact\_freezing = .false.} & \ppficon{1f4a7} \ppficon{1f6d1}
+% 💧🛑
+Disable the legacy contact routine because activated, internally mixed INPs are generally already immersed in droplets. & \href{https://doi.org/10.1029/2021RG000745}{Burrows et al. (2022)} \\
+% 💧🛑
+\texttt{rain\_freeze = .false.} & \ppficon{1f327} \ppficon{1f6d1}
+% 🌧🛑🖥🧩
+Remove INP-unaware rain freezing based on an imposed temperature dependence. & \textbf{process-isolation} \\
+% 🌧🛑🖥🧩
+\texttt{detrainment\_ramp\_liq = .true.} & \ppficon{2601} \ppficon{1f4a7}
+% ☁💧🖥🧩
+Remove INP-unaware detrained ice based on an imposed temperature ramp. & \textbf{process-isolation} \\
+% ☁💧🖥🧩
+\bottomrule
+\end{longtable}
+
+\section*{\ppficon{1f9ed} \ppficon{1f4a1}
+% 🧭💡
+Outlook}
+% 🧭💡
+\addcontentsline{toc}{section}{\ppficon{1f9ed} \ppficon{1f4a1}
+% 🧭💡
+Outlook}
+% 🧭💡
+
+\subsection*{\ppficon{1f4a7} \ppficon{23f1}
+% 💧⏱
+Droplet freezing timing in CNT}
+% 💧⏱
+
+\ppficon{1f9ee} \ppficon{23f1}
+% 🧮⏱
+In the classical nucleation theory (CNT) droplet-freezing scheme, the maximum dust immersion-freezing source depends explicitly on the model microphysics time step through \nolinkurl{total_cloudborne_aer_num(id_dst1)/deltat}.
+% 🧮⏱
+
+\ppficon{1f504} \ppficon{1f4c8}
+% 🔄📈
+Increasing the number of microphysical substeps decreases \texttt{deltat} and therefore artificially increases this source limit.
+% 🔄📈
+
+\ppficon{1f552} \ppficon{1f4a7}
+% 🕒💧
+A physically based \texttt{deltat\_CNT} should instead represent the time required to replenish activated ice-nucleating particles after droplet freezing, analogous to the replenishment interval in a typical cloud-chamber CNT experiment.
+% 🕒💧
+
+\ppficon{1f3af} \ppficon{2601}
+% 🎯☁
+This replenishment timescale could be constrained against cloud-phase metrics rather than being tied to the numerical microphysics time step.
+% 🎯☁
+
+\ppficon{1f9ea} \ppficon{1f552}
+% 🧪🕒
+Sensitivity tests indicate that \texttt{deltat\_CNT} should be approximately six hours.
+% 🧪🕒
+
+\ppficon{2696} \ppficon{1f9ca}
+% ⚖🧊
+Within the source-limited regime, changing \texttt{deltat\_CNT} is mathematically equivalent to changing the prescribed ice-nucleating-particle efficiency.
+% ⚖🧊

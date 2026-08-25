@@ -1,0 +1,29 @@
+\documentclass[11pt]{article}
+
+\usepackage[a4paper,margin=2cm]{geometry}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xcolor}
+\usepackage{fontawesome5}
+
+\input{fontawesome-icons}
+
+\newcommand{\sppepatchroot}{..}
+
+\makeatletter
+\pdfstringdefDisableCommands{%
+  \def\ppficon#1{}%
+}
+\makeatother
+
+\title{\ppficon{1f9ca} \ppficon{2699} CESM2.1.5 SPPE microphysics controls}
+\author{}
+\date{}
+
+\begin{document}
+\maketitle
+\input{cesm215_sppe_namelist}
+\end{document}

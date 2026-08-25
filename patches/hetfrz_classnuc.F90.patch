@@ -1,0 +1,110 @@
+diff --git a/src/physics/cam/hetfrz_classnuc.F90 b/src/physics/cam/hetfrz_classnuc.F90
+--- a/src/physics/cam/hetfrz_classnuc.F90
++++ b/src/physics/cam/hetfrz_classnuc.F90
+@@ -21,10 +21,11 @@
+ !-----------------------------------------------------------------------
+ 
+ use shr_kind_mod,  only: r8 => shr_kind_r8
+ use wv_saturation, only: svp_water, svp_ice
+ use shr_spfn_mod,  only: erf => shr_spfn_erf
++use micro_dv_nml, only: depr_point_frz, limfacdu
+ 
+ implicit none
+ private
+ save
+ 
+@@ -299,29 +300,32 @@
+    rgimm_dust_a1 = rgimm
+    rgimm_dust_a3 = rgimm
+ 
+    ! if aw*Si<=1, the freezing point depression is strong enough to prevent freezing
+ 
+-   if (aw(id_bc)*supersatice > 1._r8 ) then
+-      do_bc   = .true.
+-      rgimm_bc = 2*vwice*sigma_iw/(kboltz*t*LOG(aw(id_bc)*supersatice))
+-   else
+-      do_bc = .false.
+-   end if
+-
+-   if (aw(id_dst1)*supersatice > 1._r8 ) then
+-      do_dst1 = .true.
+-      rgimm_dust_a1 = 2*vwice*sigma_iw/(kboltz*t*LOG(aw(id_dst1)*supersatice))
+-   else
+-      do_dst1 = .false.
+-   end if
+-
+-   if (aw(id_dst3)*supersatice > 1._r8 ) then
+-      do_dst3 = .true.
+-      rgimm_dust_a3 = 2*vwice*sigma_iw/(kboltz*t*LOG(aw(id_dst3)*supersatice))
+-   else
+-      do_dst3 = .false.
++   do_bc = .true.
++   do_dst1 = .true.
++   do_dst3 = .true.
++
++   if (depr_point_frz) then
++      if (aw(id_bc)*supersatice > 1._r8 ) then
++         rgimm_bc = 2*vwice*sigma_iw/(kboltz*t*LOG(aw(id_bc)*supersatice))
++      else
++         do_bc = .false.
++      end if
++
++      if (aw(id_dst1)*supersatice > 1._r8 ) then
++         rgimm_dust_a1 = 2*vwice*sigma_iw/(kboltz*t*LOG(aw(id_dst1)*supersatice))
++      else
++         do_dst1 = .false.
++      end if
++
++      if (aw(id_dst3)*supersatice > 1._r8 ) then
++         rgimm_dust_a3 = 2*vwice*sigma_iw/(kboltz*t*LOG(aw(id_dst3)*supersatice))
++      else
++         do_dst3 = .false.
++      end if
+    end if
+     
+    ! form factor
+    ! only consider flat surfaces due to uncertainty of curved surfaces
+ 
+@@ -396,34 +400,34 @@
+    if (.not.tot_in) then
+       if (do_bc) frzbcimm = frzbcimm+MIN(limfacbc*total_cloudborne_aer_num(id_bc)/deltat, &
+                             total_cloudborne_aer_num(id_bc)/deltat*(1._r8-exp(-Jimm_bc*deltat))) 
+ 
+       if (.not. pdf_imm_in) then
+-         if (do_dst1) frzduimm = frzduimm+MIN(1*total_cloudborne_aer_num(id_dst1)/deltat, & 
++         if (do_dst1) frzduimm = frzduimm+MIN(limfacdu*total_cloudborne_aer_num(id_dst1)/deltat, &
+                                  total_cloudborne_aer_num(id_dst1)/deltat*(1._r8-exp(-Jimm_dust_a1*deltat)))
+-         if (do_dst3) frzduimm = frzduimm+MIN(1*total_cloudborne_aer_num(id_dst3)/deltat, &
++         if (do_dst3) frzduimm = frzduimm+MIN(limfacdu*total_cloudborne_aer_num(id_dst3)/deltat, &
+                                  total_cloudborne_aer_num(id_dst3)/deltat*(1._r8-exp(-Jimm_dust_a3*deltat)))
+       else
+-         if (do_dst1) frzduimm = frzduimm+MIN(1*total_cloudborne_aer_num(id_dst1)/deltat,        &
++         if (do_dst1) frzduimm = frzduimm+MIN(limfacdu*total_cloudborne_aer_num(id_dst1)/deltat,        &
+                                  total_cloudborne_aer_num(id_dst1)/deltat*(1._r8-sum_imm_dust_a1))
+-         if (do_dst3) frzduimm = frzduimm+MIN(1*total_cloudborne_aer_num(id_dst3)/deltat,        &
++         if (do_dst3) frzduimm = frzduimm+MIN(limfacdu*total_cloudborne_aer_num(id_dst3)/deltat,        &
+                                  total_cloudborne_aer_num(id_dst3)/deltat*(1._r8-sum_imm_dust_a3))
+       end if
+ 
+    else
+       if (do_bc) frzbcimm = frzbcimm+MIN(limfacbc*fn(id_bc)*total_aer_num(id_bc)/deltat, & 
+                             fn(id_bc)*total_aer_num(id_bc)/deltat*(1._r8-exp(-Jimm_bc*deltat))) 
+ 
+       if (.not. pdf_imm_in) then
+-         if (do_dst1) frzduimm = frzduimm+MIN(1*fn(id_dst1)*total_aer_num(id_dst1)/deltat, &
++         if (do_dst1) frzduimm = frzduimm+MIN(limfacdu*fn(id_dst1)*total_aer_num(id_dst1)/deltat, &
+                                  fn(id_dst1)*total_aer_num(id_dst1)/deltat*(1._r8-exp(-Jimm_dust_a1*deltat)))
+-         if (do_dst3) frzduimm = frzduimm+MIN(1*fn(id_dst3)*total_aer_num(id_dst3)/deltat, &
++         if (do_dst3) frzduimm = frzduimm+MIN(limfacdu*fn(id_dst3)*total_aer_num(id_dst3)/deltat, &
+                                  fn(id_dst3)*total_aer_num(id_dst3)/deltat*(1._r8-exp(-Jimm_dust_a3*deltat)))
+       else
+-         if (do_dst1) frzduimm = frzduimm+MIN(1*fn(id_dst1)*total_aer_num(id_dst1)/deltat,        &
++         if (do_dst1) frzduimm = frzduimm+MIN(limfacdu*fn(id_dst1)*total_aer_num(id_dst1)/deltat,        &
+                                  fn(id_dst1)*total_aer_num(id_dst1)/deltat*(1._r8-sum_imm_dust_a1))
+-         if (do_dst3) frzduimm = frzduimm+MIN(1*fn(id_dst3)*total_aer_num(id_dst3)/deltat,        &
++         if (do_dst3) frzduimm = frzduimm+MIN(limfacdu*fn(id_dst3)*total_aer_num(id_dst3)/deltat,        &
+                                  fn(id_dst3)*total_aer_num(id_dst3)/deltat*(1._r8-sum_imm_dust_a3))
+       end if
+    end if
+ 
+    if (t > 263.15_r8) then

@@ -1,0 +1,10 @@
+/work/
+/cases/
+/output/
+__pycache__/
+*.pyc
+*.swp
+/latex/*.aux
+/latex/*.log
+/latex/*.out
+/latex/*.pdf

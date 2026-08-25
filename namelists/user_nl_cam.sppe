@@ -1,0 +1,96 @@
+!-- PPE parameters --!
+
+hclas_du_imm = 1 
+riming_factor   = 1
+auto_liq_factor = 1
+micro_mg_ice_berg_ice_factor = 1
+micro_mg_ice_berg_snow_factor = 1
+
+!----------------------------------------------------------
+! Nudging configuration: ERA5 winds only (U, V)
+!----------------------------------------------------------
+Nudge_Model    = .true.
+Nudge_Path     = '/nfs/n2o/wolke_scratch/GLANCE/cesm_input/CESM_nudging_files/'
+Nudge_File_Template = 'ERA5_x_fv1x1_L32_rgC2_WO.%y-%m-%d-%s.nc'
+
+Nudge_Times_Per_Day = 4
+
+! Wind nudging ON (reduced strength to avoid aerosol instability)
+Nudge_Uprof  = 1
+Nudge_Ucoef  = 1 ! weak nudging, otherwise crash!
+Nudge_Vprof  = 1
+Nudge_Vcoef  = 1
+
+! T, Q, PS nudging OFF
+Nudge_Tprof  = 0
+Nudge_Tcoef  = 0.0
+Nudge_Qprof  = 0
+Nudge_Qcoef  = 0.0
+Nudge_PSprof = 0
+Nudge_PScoef = 0.0
+
+! Date range — adjust to simulation period
+Nudge_Beg_Year  = 2000
+Nudge_Beg_Month = 1
+Nudge_Beg_Day   = 1
+Nudge_End_Year  = 2025
+Nudge_End_Month = 12
+Nudge_End_Day   = 31
+
+! Nudge globally, entire column
+Nudge_Hwin_lat0     = 0.0
+Nudge_Hwin_latWidth = 999.0
+Nudge_Hwin_latDelta = 0.1
+Nudge_Hwin_lon0     = 180.0
+Nudge_Hwin_lonWidth = 999.0
+Nudge_Hwin_lonDelta = 0.1
+Nudge_Vwin_Lindex   = 0.0
+Nudge_Vwin_Ldelta   = 0.001
+Nudge_Vwin_Hindex   = 33.0
+Nudge_Vwin_Hdelta   = 0.001
+
+! for stability
+! smoother and more stable than stepping to next file
+Nudge_Force_Opt = 1 ! LINEAR
+! safer than STRONG, especially if stronger settings already crash
+Nudge_TimeScale_Opt  = 0      ! WEAK
+! update nudging every model step if CAM dt = 1800 s = 30 min
+Model_Times_Per_Day  = 48
+
+!----------------------------------------------------------
+! Microphysics & output 
+!----------------------------------------------------------
+!! based on /cluster/work/climate/dvillanueva/work/CESM/src/physics/cam/micro_dv_nml.F90
+
+factor_HM = 0
+onoff_sip = .false. 
+
+depr_point_frz = .false.      ! avoid solubility effect deactivating 
+			      ! freezing for warmer temperatures
+
+!! 
+!!! zach_ss8_stopleak # MG23+ 
+!! 
+
+enable_nimax = .false.               ! as PUMAS paper 2.21, but omiting Ni cap to 100/cm3
+limfacdu = 0.05                     ! max. aerosol fraction as INP (PUMAS paper 2.22)
+
+micro_mg_num_steps = 8                ! see 10.1029/2021MS002776
+naai_het_also_in_mpc = .false.       ! no leak from cirrus to mpc
+
+!! 
+!!! zach_ss8_stopleak_oduimm # SDust 
+!! 
+
+
+hclas_du_dep = 0.0  ! onoff_contact_freezing/onoff_sip/rain_freeze/detrainment_ramp_liq = switch
+hclas_du_cnt = 0.0                      
+hclas_bc_imm = 0.0                      
+hclas_bc_dep = 0.0                      
+hclas_bc_cnt = 0.0                      
+
+onoff_contact_freezing = .false.       !! should be FALSE -> simple
+rain_freeze = .false.                   ! should be FALSE -> simple  
+detrainment_ramp_liq = .true.              ! should be TRUE -> liq (clubb)
+
+

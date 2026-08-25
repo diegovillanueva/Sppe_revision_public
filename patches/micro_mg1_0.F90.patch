@@ -1,0 +1,31 @@
+diff --git a/src/physics/cam/micro_mg1_0.F90 b/src/physics/cam/micro_mg1_0.F90
+--- a/src/physics/cam/micro_mg1_0.F90
++++ b/src/physics/cam/micro_mg1_0.F90
+@@ -48,10 +48,12 @@
+        svp_water => wv_sat_svp_water, &
+        svp_ice => wv_sat_svp_ice, &
+        svp_to_qsat => wv_sat_svp_to_qsat
+ 
+   use phys_control, only: phys_getopts
++
++use micro_dv_nml, only: enable_nimax
+ 
+ implicit none
+ private
+ save
+ 
+@@ -2592,11 +2594,13 @@
+ 
+          if (nctend(i,k).gt.0._r8.and.nc(i,k)+nctend(i,k)*deltat.gt.ncmax) then
+             nctend(i,k)=max(0._r8,(ncmax-nc(i,k))/deltat)
+          end if
+ 
+-         if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax) then
++         ! disable nimax
++
++         if (enable_nimax .and. do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax) then
+             nitend(i,k)=max(0._r8,(nimax-ni(i,k))/deltat)
+          end if
+ 
+          ! get final values for precipitation q and N, based on
+          ! flux of precip from above, source/sink term, and terminal fallspeed

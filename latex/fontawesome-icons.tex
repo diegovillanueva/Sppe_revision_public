@@ -1,0 +1,139 @@
+\definecolor{ppfIconBlue}{RGB}{43,108,176}
+\definecolor{ppfIconTeal}{RGB}{31,140,140}
+\definecolor{ppfIconGreen}{RGB}{46,139,87}
+\definecolor{ppfIconPurple}{RGB}{111,78,160}
+\definecolor{ppfIconOrange}{RGB}{211,120,42}
+\definecolor{ppfIconRed}{RGB}{180,55,55}
+\definecolor{ppfIconIndigo}{RGB}{70,82,150}
+\definecolor{ppfIconGray}{RGB}{90,98,108}
+
+\newcommand{\ppfDeclareIcon}[3]{%
+  \expandafter\def\csname ppfIconGlyph#1\endcsname{\textcolor{#3}{\faIcon{#2}}}%
+}
+\newcommand{\ppficon}[1]{%
+  \ifcsname ppfIconGlyph#1\endcsname
+    \csname ppfIconGlyph#1\endcsname
+  \else
+    \textcolor{ppfIconGray}{\faIcon{question-circle}}%
+  \fi
+}
+
+\ppfDeclareIcon{23f1}{stopwatch}{ppfIconGray} % ⏱
+\ppfDeclareIcon{23f3}{hourglass-half}{ppfIconGray} % ⏳
+\ppfDeclareIcon{2600}{sun}{ppfIconOrange} % ☀
+\ppfDeclareIcon{2601}{cloud}{ppfIconBlue} % ☁
+\ppfDeclareIcon{2696}{balance-scale}{ppfIconTeal} % ⚖
+\ppfDeclareIcon{2699}{cog}{ppfIconGray} % ⚙
+\ppfDeclareIcon{26a0}{exclamation-triangle}{ppfIconOrange} % ⚠
+\ppfDeclareIcon{26aa}{circle}{ppfIconGray} % ⚪
+\ppfDeclareIcon{26ab}{circle}{ppfIconGray} % ⚫
+\ppfDeclareIcon{2705}{check-circle}{ppfIconGreen} % ✅
+\ppfDeclareIcon{2702}{cut}{ppfIconGray} % ✂
+\ppfDeclareIcon{2744}{snowflake}{ppfIconBlue} % ❄
+\ppfDeclareIcon{2753}{question-circle}{ppfIconPurple} % ❓
+\ppfDeclareIcon{2795}{plus}{ppfIconGreen} % ➕
+\ppfDeclareIcon{2796}{minus}{ppfIconGray} % ➖
+\ppfDeclareIcon{2797}{divide}{ppfIconPurple} % ➗
+\ppfDeclareIcon{27a1}{arrow-right}{ppfIconIndigo} % ➡
+\ppfDeclareIcon{1f300}{wind}{ppfIconTeal} % 🌀
+\ppfDeclareIcon{1f308}{rainbow}{ppfIconPurple} % 🌈
+\ppfDeclareIcon{1f30a}{water}{ppfIconBlue} % 🌊
+\ppfDeclareIcon{1f30d}{globe-europe}{ppfIconTeal} % 🌍
+\ppfDeclareIcon{1f30e}{globe-americas}{ppfIconTeal} % 🌎
+\ppfDeclareIcon{1f310}{globe}{ppfIconTeal} % 🌐
+\ppfDeclareIcon{1f321}{thermometer-half}{ppfIconOrange} % 🌡
+\ppfDeclareIcon{1f325}{cloud-sun}{ppfIconBlue} % 🌥
+\ppfDeclareIcon{1f326}{cloud-sun-rain}{ppfIconBlue} % 🌦
+\ppfDeclareIcon{1f327}{cloud-rain}{ppfIconBlue} % 🌧
+\ppfDeclareIcon{1f328}{snowflake}{ppfIconBlue} % 🌨
+\ppfDeclareIcon{1f32b}{smog}{ppfIconGray} % 🌫
+\ppfDeclareIcon{1f32c}{wind}{ppfIconTeal} % 🌬
+\ppfDeclareIcon{1f342}{leaf}{ppfIconGreen} % 🍂
+\ppfDeclareIcon{1f3a8}{palette}{ppfIconPurple} % 🎨
+\ppfDeclareIcon{1f3ad}{theater-masks}{ppfIconPurple} % 🎭
+\ppfDeclareIcon{1f3af}{bullseye}{ppfIconRed} % 🎯
+\ppfDeclareIcon{1f3b2}{dice}{ppfIconPurple} % 🎲
+\ppfDeclareIcon{1f3f7}{tag}{ppfIconIndigo} % 🏷
+\ppfDeclareIcon{1f40d}{code}{ppfIconGreen} % 🐍
+\ppfDeclareIcon{1f464}{user}{ppfIconIndigo} % 👤
+\ppfDeclareIcon{1f497}{heart}{ppfIconPurple} % 💗
+\ppfDeclareIcon{1f4a1}{lightbulb}{ppfIconOrange} % 💡
+\ppfDeclareIcon{1f4a7}{tint}{ppfIconBlue} % 💧
+\ppfDeclareIcon{1f4a8}{wind}{ppfIconTeal} % 💨
+\ppfDeclareIcon{1f4aa}{dumbbell}{ppfIconGreen} % 💪
+\ppfDeclareIcon{1f4bb}{laptop}{ppfIconIndigo} % 💻
+\ppfDeclareIcon{1f4be}{save}{ppfIconIndigo} % 💾
+\ppfDeclareIcon{1f4c2}{folder-open}{ppfIconIndigo} % 📂
+\ppfDeclareIcon{1f4c4}{file-alt}{ppfIconIndigo} % 📄
+\ppfDeclareIcon{1f4c5}{calendar-alt}{ppfIconIndigo} % 📅
+\ppfDeclareIcon{1f4c6}{calendar}{ppfIconIndigo} % 📆
+\ppfDeclareIcon{1f4c8}{chart-line}{ppfIconGreen} % 📈
+\ppfDeclareIcon{1f4c9}{chart-line}{ppfIconRed} % 📉
+\ppfDeclareIcon{1f4ca}{chart-bar}{ppfIconPurple} % 📊
+\ppfDeclareIcon{1f4cb}{clipboard-list}{ppfIconIndigo} % 📋
+\ppfDeclareIcon{1f4cc}{map-pin}{ppfIconRed} % 📌
+\ppfDeclareIcon{1f4cd}{map-marker-alt}{ppfIconRed} % 📍
+\ppfDeclareIcon{1f4ce}{paperclip}{ppfIconGray} % 📎
+\ppfDeclareIcon{1f4cf}{ruler}{ppfIconPurple} % 📏
+\ppfDeclareIcon{1f4d0}{drafting-compass}{ppfIconPurple} % 📐
+\ppfDeclareIcon{1f4d6}{book-open}{ppfIconIndigo} % 📖
+\ppfDeclareIcon{1f4d8}{book}{ppfIconIndigo} % 📘
+\ppfDeclareIcon{1f4da}{book}{ppfIconPurple} % 📚
+\ppfDeclareIcon{1f4dc}{scroll}{ppfIconIndigo} % 📜
+\ppfDeclareIcon{1f4dd}{edit}{ppfIconIndigo} % 📝
+\ppfDeclareIcon{1f4e1}{satellite-dish}{ppfIconPurple} % 📡
+\ppfDeclareIcon{1f4e5}{file-download}{ppfIconIndigo} % 📥
+\ppfDeclareIcon{1f4e6}{box-open}{ppfIconIndigo} % 📦
+\ppfDeclareIcon{1f500}{random}{ppfIconPurple} % 🔀
+\ppfDeclareIcon{1f501}{sync}{ppfIconTeal} % 🔁
+\ppfDeclareIcon{1f504}{sync-alt}{ppfIconTeal} % 🔄
+\ppfDeclareIcon{1f50d}{search}{ppfIconIndigo} % 🔍
+\ppfDeclareIcon{1f50e}{search-plus}{ppfIconIndigo} % 🔎
+\ppfDeclareIcon{1f513}{unlock-alt}{ppfIconGreen} % 🔓
+\ppfDeclareIcon{1f517}{link}{ppfIconIndigo} % 🔗
+\ppfDeclareIcon{1f522}{sort-numeric-up}{ppfIconPurple} % 🔢
+\ppfDeclareIcon{1f525}{fire}{ppfIconRed} % 🔥
+\ppfDeclareIcon{1f52c}{microscope}{ppfIconPurple} % 🔬
+\ppfDeclareIcon{1f534}{circle}{ppfIconRed} % 🔴
+\ppfDeclareIcon{1f535}{circle}{ppfIconBlue} % 🔵
+\ppfDeclareIcon{1f536}{square}{ppfIconOrange} % 🔶
+\ppfDeclareIcon{1f53a}{caret-up}{ppfIconRed} % 🔺
+\ppfDeclareIcon{1f53d}{caret-down}{ppfIconBlue} % 🔽
+\ppfDeclareIcon{1f552}{clock}{ppfIconGray} % 🕒
+\ppfDeclareIcon{1f58b}{pen}{ppfIconIndigo} % 🖋
+\ppfDeclareIcon{1f5a4}{heart}{ppfIconGray} % 🖤
+\ppfDeclareIcon{1f5a5}{desktop}{ppfIconIndigo} % 🖥
+\ppfDeclareIcon{1f5bc}{image}{ppfIconPurple} % 🖼
+\ppfDeclareIcon{1f5c2}{folder}{ppfIconIndigo} % 🗂
+\ppfDeclareIcon{1f5c3}{archive}{ppfIconIndigo} % 🗃
+\ppfDeclareIcon{1f5dd}{key}{ppfIconOrange} % 🗝
+\ppfDeclareIcon{1f5fa}{map-marked-alt}{ppfIconTeal} % 🗺
+\ppfDeclareIcon{1f680}{rocket}{ppfIconOrange} % 🚀
+\ppfDeclareIcon{1f6a6}{traffic-light}{ppfIconOrange} % 🚦
+\ppfDeclareIcon{1f6a7}{road}{ppfIconOrange} % 🚧
+\ppfDeclareIcon{1f6ab}{ban}{ppfIconRed} % 🚫
+\ppfDeclareIcon{1f6d1}{stop-circle}{ppfIconRed} % 🛑
+\ppfDeclareIcon{1f6e0}{tools}{ppfIconGray} % 🛠
+\ppfDeclareIcon{1f6e1}{shield-alt}{ppfIconGreen} % 🛡
+\ppfDeclareIcon{1f6f0}{satellite}{ppfIconPurple} % 🛰
+\ppfDeclareIcon{1f7e0}{circle}{ppfIconOrange} % 🟠
+\ppfDeclareIcon{1f7e1}{circle}{ppfIconOrange} % 🟡
+\ppfDeclareIcon{1f7e2}{circle}{ppfIconGreen} % 🟢
+\ppfDeclareIcon{1f7e3}{circle}{ppfIconPurple} % 🟣
+\ppfDeclareIcon{1f7e4}{circle}{ppfIconGray} % 🟤
+\ppfDeclareIcon{1f7e5}{square}{ppfIconRed} % 🟥
+\ppfDeclareIcon{1f7e6}{square}{ppfIconBlue} % 🟦
+\ppfDeclareIcon{1f7e7}{square}{ppfIconOrange} % 🟧
+\ppfDeclareIcon{1f7e8}{square}{ppfIconOrange} % 🟨
+\ppfDeclareIcon{1f7e9}{square}{ppfIconGreen} % 🟩
+\ppfDeclareIcon{1f916}{robot}{ppfIconPurple} % 🤖
+\ppfDeclareIcon{1f91d}{handshake}{ppfIconGreen} % 🤝
+\ppfDeclareIcon{1f9ca}{cube}{ppfIconBlue} % 🧊
+\ppfDeclareIcon{1f9e9}{puzzle-piece}{ppfIconPurple} % 🧩
+\ppfDeclareIcon{1f9ea}{flask}{ppfIconPurple} % 🧪
+\ppfDeclareIcon{1f9ec}{dna}{ppfIconPurple} % 🧬
+\ppfDeclareIcon{1f9ed}{compass}{ppfIconTeal} % 🧭
+\ppfDeclareIcon{1f9ee}{calculator}{ppfIconPurple} % 🧮
+\ppfDeclareIcon{1f9f9}{broom}{ppfIconGreen} % 🧹
+\ppfDeclareIcon{1f9fd}{swimmer}{ppfIconBlue} % 🧽
+\ppfDeclareIcon{1fae7}{tint}{ppfIconBlue} % 🫧

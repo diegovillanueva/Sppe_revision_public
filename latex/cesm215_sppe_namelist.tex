@@ -268,6 +268,8 @@ Table~\ref{tab:sppe-namelist-decisions} summarizes the physical or numerical rat
 
 In the classical nucleation theory (CNT) droplet-freezing scheme, the maximum dust immersion-freezing source depends explicitly on the model microphysics time step through \nolinkurl{total_cloudborne_aer_num(id_dst1)/deltat}.
 
+At the CLUBB--MG coupling level, \texttt{cld\_macmic\_num\_steps = 3} divides the 1800\,s atmospheric time step into three coupled calls of 600\,s each; within each call, \texttt{micro\_mg\_num\_steps = 8} yields an MG microphysics time step of 75\,s.
+
 Increasing the number of microphysical substeps decreases \texttt{deltat} and therefore artificially increases this source limit.
 
 A physically based \texttt{deltat\_CNT} should instead represent the time required to replenish activated ice-nucleating particles after droplet freezing, analogous to the replenishment interval in a typical cloud-chamber CNT experiment.

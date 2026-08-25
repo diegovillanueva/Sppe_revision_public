@@ -5,7 +5,7 @@ PDFLATEX_FLAGS ?= -interaction=nonstopmode -halt-on-error
 
 all: Sppe.pdf
 
-Sppe.pdf: Sppe.tex cesm215_sppe_namelist.tex fontawesome-icons.tex
+Sppe.pdf: Sppe.tex cesm215_sppe_namelist.tex
 	@if command -v $(PDFLATEX) >/dev/null 2>&1; then \
 		$(PDFLATEX) $(PDFLATEX_FLAGS) Sppe.tex && \
 		$(PDFLATEX) $(PDFLATEX_FLAGS) Sppe.tex; \

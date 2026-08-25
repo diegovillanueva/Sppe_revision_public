@@ -1,63 +1,45 @@
-# 🧊🧪 CESM2.1.5 SPPE patch package
+# 🧊🛠️ CESM2.1.5 SPPE microphysics patch
 
-🎯🔬 This directory is the minimal, independently publishable source package for rebuilding and running the patched CESM2.1.5 CAM SPPE configuration.
+🎯🧬 This package applies the study-specific microphysics controls in `patches/` to CAM tag `cam_cesm2_1_rel_60` and configures them with `namelists/user_nl_cam.sppe`.
 
-📦🌳 The directory remains an ordinary tracked subtree of PPF and can later be published independently with `git subtree split --prefix=data_code/cesm215/Sppe_patch`.
+🚀📦 Apply the complete patch set from a clean CAM checkout with:
 
-## 🧩📂 Contents
+```bash
+git apply /path/to/Sppe_patch/patches/*.patch
+```
 
-- 🧬🔒 `versions.env` pins the upstream CESM and CAM tags and commits.
-- 🛠️🧩 `patches/` contains the ten CAM patches that must be applied together.
-- 📋🎛️ `namelists/user_nl_cam.sppe` is the tested canonical SPPE and ERA5-nudging template.
-- 🚀⚙️ `scripts/build_and_test.sh` checks out, patches, configures, builds, and optionally submits a smoke test.
-- 🔬⚖️ `scripts/compare_cam_outputs.py` performs exact scientific-variable comparisons between paired CAM history files.
-- 🏔️🔐 `config/euler.sha256` verifies the six external Euler CIME configuration files downloaded by the driver.
-- 🌍📦 `inputs/README.md` defines the required external CESM and ERA5 data contract.
-- 📄🎨 `latex/` contains the standalone Appendix G source, its local icon definitions, and the wrapper that builds `Sppe.pdf`.
-- 🧾🔐 `SHA256SUMS` verifies every portable package input.
+## 🧩⚙️ Added controls
 
-## 📄🎨 Standalone Appendix G
+| 🧷🔤 Parameter | 🛠️🧭 What it fixes or controls |
+|---|---|
+| `hclas_du_imm` | 🟢🧊 Exposes dust immersion freezing as the retained and perturbable mixed-phase aerosol pathway. |
+| `hclas_du_dep` | 🟤🛑 Removes the minor dust deposition-nucleation pathway when set to zero. |
+| `hclas_du_cnt` | 🟤🛑 Removes the poorly constrained dust contact-freezing pathway when set to zero. |
+| `hclas_bc_imm` | ⚫🛑 Removes the globally unimportant black-carbon immersion-freezing source when set to zero. |
+| `hclas_bc_dep` | ⚫🛑 Removes the globally unimportant black-carbon deposition-nucleation source when set to zero. |
+| `hclas_bc_cnt` | ⚫🛑 Removes the globally unimportant black-carbon contact-freezing source when set to zero. |
+| `riming_factor` | ❄️🎛️ Exposes snow riming efficiency for perturbation before secondary-ice production is calculated. |
+| `auto_liq_factor` | 🌧️🎛️ Exposes liquid autoconversion efficiency for perturbation. |
+| `micro_mg_ice_berg_ice_factor` | 🧊🎛️ Separately scales Wegener--Bergeron--Findeisen deposition onto cloud ice. |
+| `micro_mg_ice_berg_snow_factor` | ❄️🎛️ Separately scales Wegener--Bergeron--Findeisen deposition onto snow. |
+| `factor_HM` | 🧪📉 Scales the Hallett--Mossop splinter source so the unsupported efficient source can be removed. |
+| `onoff_sip` | 🧊🛑 Provides a redundant hard switch that prevents the Hallett--Mossop source from executing. |
+| `onoff_contact_freezing` | 💧🛑 Disables CAM's legacy internal contact-freezing routine. |
+| `rain_freeze` | 🌧️🛑 Removes INP-unaware, temperature-prescribed rain freezing. |
+| `depr_point_frz` | 💧🔓 Bypasses artificial suppression of immersion freezing by the aerosol-solubility gate after activation. |
+| `enable_nimax` | 🧊🔓 Removes the unphysical legacy maximum ice-number limiter. |
+| `limfacdu` | 🟡📉 Replaces the broad ice-number limiter with a process-level cap on the fraction of dust activated as INPs per call. |
+| `naai_het_also_in_mpc` | 🧊🚧 Prevents the cirrus ice-number target from leaking into mixed-phase clouds. |
+| `detrainment_ramp_liq` | ☁️💧 Prevents INP-unaware mixed-phase detrained ice by retaining detrained condensate as liquid in the ramp interval. |
 
-🧊📘 Build the standalone explanation of the SPPE microphysics controls with:
+⏱️✅ The accompanying namelist also sets CAM's native `micro_mg_num_steps = 8` for a numerically converged microphysical substep length; this is not one of the 19 patch-added controls.
+
+## 📄🎨 Technical appendix
+
+📘🔍 The implementation excerpts, physical rationales, and references are documented in `latex/cesm215_sppe_namelist.tex`.
+
+🧪📄 Build the standalone `latex/Sppe.pdf` with:
 
 ```bash
 make -C latex
 ```
-
-📄✅ The build writes `latex/Sppe.pdf` and requires only a LaTeX installation providing `geometry`, `array`, `booktabs`, `longtable`, `url`, `hyperref`, `xcolor`, and `fontawesome5`.
-
-🔗🛡️ The manuscript-facing path `tex_sections/cesm215_sppe_namelist.tex` remains a compatibility symlink to the authoritative source in this directory.
-
-## 🚀🟢 Quick start on Euler
-
-🟣📌 Set the two external-data roots, then run the complete reference-case workflow:
-
-```bash
-export DIN_LOC_ROOT=/cluster/work/climate/cesm/inputdata
-export NUDGE_PATH=/nfs/n2o/wolke_scratch/GLANCE/cesm_input/CESM_nudging_files
-./scripts/build_and_test.sh all reference 1
-```
-
-🟠🧪 Build a perturbation case with `riming_factor = 1e-2` by running:
-
-```bash
-./scripts/build_and_test.sh all rim_m2 1e-2
-```
-
-🔵📋 Run individual stages with `checkout`, `patch`, `create`, `build`, or `submit`; `./scripts/build_and_test.sh help` prints their interfaces.
-
-## 🧬✅ Source contract
-
-🟢🔒 The driver requires CESM commit `7a6c5b0d4e045085633dd9553cdd6aa8a8ea728d` and CAM commit `a03b84b7c4e34f965b115686f22a043b85739e56` before applying any patch.
-
-🟢🧩 The patches expose exactly 19 runtime controls and have passed clean application, compilation, patched-runtime, and pristine-equivalence tests documented in the parent PPF repository.
-
-## 🌳📤 Independent publication
-
-🟣🔀 From the PPF repository root, create an independent branch with:
-
-```bash
-git subtree split --prefix=data_code/cesm215/Sppe_patch -b sppe-patch-release
-```
-
-🔵🚀 Push that branch to the independent repository without embedding a nested `.git` directory inside PPF.

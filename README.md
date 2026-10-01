@@ -29,10 +29,11 @@ git apply /path/to/Sppe_patch/patches/*.patch
 | `depr_point_frz` | 💧🔓 Bypasses artificial suppression of immersion freezing by the aerosol-solubility gate after activation. |
 | `enable_nimax` | 🧊🔓 Removes the unphysical legacy maximum ice-number limiter. |
 | `limfacdu` | 🟡📉 Replaces the broad ice-number limiter with a process-level cap on the fraction of dust activated as INPs per call. |
+| `limfacdu_niemand_continuous` | 🟡🧊 Replaces the capped classical-nucleation-theory dust immersion rate with the Niemand et al. (2012) frozen fraction of immersed dust, frozen every call; `limfacdu` is then inactive. |
 | `naai_het_also_in_mpc` | 🧊🚧 Prevents the cirrus ice-number target from leaking into mixed-phase clouds. |
 | `detrainment_ramp_liq` | ☁️💧 Prevents INP-unaware mixed-phase detrained ice by retaining detrained condensate as liquid in the ramp interval. |
 
-⏱️✅ The accompanying namelist also sets CAM's native `micro_mg_num_steps = 8` for a numerically converged microphysical substep length; this is not one of the 19 patch-added controls.
+⏱️✅ The accompanying namelist also sets CAM's native `micro_mg_num_steps = 8` for a numerically converged microphysical substep length; this is not one of the 20 patch-added controls.
 
 ## 📄🎨 Technical appendix
 

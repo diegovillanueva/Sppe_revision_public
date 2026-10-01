@@ -1,7 +1,7 @@
 diff --git a/bld/namelist_files/namelist_definition.xml b/bld/namelist_files/namelist_definition.xml
 --- a/bld/namelist_files/namelist_definition.xml
 +++ b/bld/namelist_files/namelist_definition.xml
-@@ -7745,6 +7745,124 @@
+@@ -7745,6 +7745,133 @@
         group="offline_driver_nl" valid_values="" >
  List of filepaths for dataset for offline unit driver.
  Default: none
@@ -79,6 +79,15 @@ diff --git a/bld/namelist_files/namelist_definition.xml b/bld/namelist_files/nam
 +       group="micro_dv_nl" valid_values="" >
 +limit dust aerosol N for dust-drive droplet freezing . (Still model timing dependent)
 +Default: 5%
++</entry>
++
++<entry id="limfacdu_niemand_continuous" type="logical" category="microphys"
++       group="micro_dv_nl" valid_values="" >
++If .true., dust immersion freezing follows Niemand et al. (2012): the frozen fraction
++FF(T,r) = 1-exp(-4*pi*r^2*n_s(T)), n_s(T) = exp(-0.517*(T-273.15)+8.934) [m-2] (n_s = 0 below 233 K),
++of the immersed dust number of each dust mode freezes every call. Replaces the
++limfacdu-capped classical-nucleation-theory rate, so limfacdu is then inactive.
++Default: .false.
 +</entry>
 +
 +<entry id="micro_mg_ice_berg_ice_factor" type="real" category="microphys"

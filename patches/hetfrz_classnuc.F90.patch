@@ -7,13 +7,26 @@ diff --git a/src/physics/cam/hetfrz_classnuc.F90 b/src/physics/cam/hetfrz_classn
  use shr_kind_mod,  only: r8 => shr_kind_r8
  use wv_saturation, only: svp_water, svp_ice
  use shr_spfn_mod,  only: erf => shr_spfn_erf
-+use micro_dv_nml, only: depr_point_frz, limfacdu
++use micro_dv_nml, only: depr_point_frz, limfacdu, limfacdu_niemand_continuous
  
  implicit none
  private
  save
  
-@@ -299,29 +300,32 @@
+@@ -178,10 +179,12 @@
+    real(r8) :: Aimm_bc
+    real(r8) :: Aimm_dust_a1, Aimm_dust_a3
+    real(r8) :: q, m, phi   
+    real(r8) :: r_bc                            ! model radii of BC modes [m]   
+    real(r8) :: r_dust_a1, r_dust_a3            ! model radii of dust modes [m]   
++   real(r8) :: ns_niemand                      ! Niemand et al. (2012) ice-active surface site density n_s(T) [m-2]
++   real(r8) :: ff_dst1, ff_dst3                ! Niemand et al. (2012) frozen fraction of each dust mode [ ]
+    real(r8) :: f_imm_bc 
+    real(r8) :: f_imm_dust_a1, f_imm_dust_a3 
+    real(r8) :: Jimm_bc
+    real(r8) :: Jimm_dust_a1, Jimm_dust_a3
+    real(r8) :: f_dep_bc 
+@@ -299,29 +302,32 @@
     rgimm_dust_a1 = rgimm
     rgimm_dust_a3 = rgimm
  
@@ -65,13 +78,36 @@ diff --git a/src/physics/cam/hetfrz_classnuc.F90 b/src/physics/cam/hetfrz_classn
     ! form factor
     ! only consider flat surfaces due to uncertainty of curved surfaces
  
-@@ -396,34 +400,34 @@
+@@ -391,39 +397,59 @@
+            end if
+       end do
+       
+    end if
+ 
++   ! Niemand et al. (2012) frozen fraction of immersed dust:
++   !   FF(T,r) = 1 - exp(-4*pi*r^2 * n_s(T)),  n_s(T) = exp(-0.517*(T-273.15) + 8.934) [m-2]
++   ! with n_s = 0 below 233 K. With limfacdu_niemand_continuous, FF*N_dust freezes every
++   ! call and replaces the limfacdu-capped classical-nucleation-theory rate.
++   if (limfacdu_niemand_continuous) then
++      if (t < 233._r8) then
++         ns_niemand = 0._r8
++      else
++         ns_niemand = EXP(-0.517_r8*(t-273.15_r8) + 8.934_r8)
++      end if
++      ff_dst1 = 1._r8-EXP(-4._r8*pi*r_dust_a1**2*ns_niemand)
++      ff_dst3 = 1._r8-EXP(-4._r8*pi*r_dust_a3**2*ns_niemand)
++   end if
++
     if (.not.tot_in) then
        if (do_bc) frzbcimm = frzbcimm+MIN(limfacbc*total_cloudborne_aer_num(id_bc)/deltat, &
                              total_cloudborne_aer_num(id_bc)/deltat*(1._r8-exp(-Jimm_bc*deltat))) 
  
-       if (.not. pdf_imm_in) then
+-      if (.not. pdf_imm_in) then
 -         if (do_dst1) frzduimm = frzduimm+MIN(1*total_cloudborne_aer_num(id_dst1)/deltat, & 
++      if (limfacdu_niemand_continuous) then
++         if (do_dst1) frzduimm = frzduimm+ff_dst1*total_cloudborne_aer_num(id_dst1)/deltat
++         if (do_dst3) frzduimm = frzduimm+ff_dst3*total_cloudborne_aer_num(id_dst3)/deltat
++      else if (.not. pdf_imm_in) then
 +         if (do_dst1) frzduimm = frzduimm+MIN(limfacdu*total_cloudborne_aer_num(id_dst1)/deltat, &
                                   total_cloudborne_aer_num(id_dst1)/deltat*(1._r8-exp(-Jimm_dust_a1*deltat)))
 -         if (do_dst3) frzduimm = frzduimm+MIN(1*total_cloudborne_aer_num(id_dst3)/deltat, &
@@ -90,8 +126,12 @@ diff --git a/src/physics/cam/hetfrz_classnuc.F90 b/src/physics/cam/hetfrz_classn
        if (do_bc) frzbcimm = frzbcimm+MIN(limfacbc*fn(id_bc)*total_aer_num(id_bc)/deltat, & 
                              fn(id_bc)*total_aer_num(id_bc)/deltat*(1._r8-exp(-Jimm_bc*deltat))) 
  
-       if (.not. pdf_imm_in) then
+-      if (.not. pdf_imm_in) then
 -         if (do_dst1) frzduimm = frzduimm+MIN(1*fn(id_dst1)*total_aer_num(id_dst1)/deltat, &
++      if (limfacdu_niemand_continuous) then
++         if (do_dst1) frzduimm = frzduimm+ff_dst1*fn(id_dst1)*total_aer_num(id_dst1)/deltat
++         if (do_dst3) frzduimm = frzduimm+ff_dst3*fn(id_dst3)*total_aer_num(id_dst3)/deltat
++      else if (.not. pdf_imm_in) then
 +         if (do_dst1) frzduimm = frzduimm+MIN(limfacdu*fn(id_dst1)*total_aer_num(id_dst1)/deltat, &
                                   fn(id_dst1)*total_aer_num(id_dst1)/deltat*(1._r8-exp(-Jimm_dust_a1*deltat)))
 -         if (do_dst3) frzduimm = frzduimm+MIN(1*fn(id_dst3)*total_aer_num(id_dst3)/deltat, &

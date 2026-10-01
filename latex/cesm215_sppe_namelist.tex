@@ -91,6 +91,25 @@ if (do_dst1) frzduimm = frzduimm + MIN( &
      *(1._r8-exp(-Jimm_dust_a1*deltat)))
 \end{verbatim}
 
+This cap acts only on the classical-nucleation-theory branch and is therefore inactive for dust while \texttt{limfacdu\_niemand\_continuous = .true.}.
+
+\paragraph*{\texttt{limfacdu\_niemand\_continuous = .true.}.}
+This switch replaces the capped classical-nucleation-theory rate of dust immersion freezing with the surface-site-density parameterization of \href{https://doi.org/10.1175/JAS-D-11-0249.1}{Niemand et al. (2012)}.
+
+For each dust mode with radius $r$, the frozen fraction is $FF(T,r) = 1-\exp[-4\pi r^{2} n_s(T)]$ with $n_s(T) = \exp[-0.517\,(T-273.15) + 8.934]$\,m\textsuperscript{$-2$}, and $n_s = 0$ below 233\,K.
+
+The product of $FF$ and the immersed dust number is frozen at every call, without subtracting the ice number already present and without an additional cap on the frozen fraction.
+
+The cloud-borne dust branch in \texttt{hetfrz\_classnuc.F90.patch} is:
+
+\begin{verbatim}
+ns_niemand = EXP(-0.517_r8*(t-273.15_r8) + 8.934_r8)
+ff_dst1 = 1._r8-EXP(-4._r8*pi*r_dust_a1**2*ns_niemand)
+
+if (do_dst1) frzduimm = frzduimm &
+     + ff_dst1*total_cloudborne_aer_num(id_dst1)/deltat
+\end{verbatim}
+
 \subsection*{Numerical substepping and cirrus isolation}
 
 \paragraph*{\texttt{micro\_mg\_num\_steps = 8}.}
@@ -223,7 +242,7 @@ ptend_loc%q(i,k,ixcldice) = difzm(i,k) + dlf2(i,k)*dum1
 
 \subsection*{Combined \textbf{\textit{SPPE}} interpretation}
 
-Collectively, the settings retain dust immersion freezing with a 5\% dust-number cap, remove the legacy ice-number limiter, and use eight MG2 substeps for numerical convergence.
+Collectively, the settings retain dust immersion freezing following Niemand et al. (2012), remove the legacy ice-number limiter, and use eight MG2 substeps for numerical convergence.
 
 They also keep aerosol-aware cirrus nucleation out of mixed-phase temperatures and force detrained condensate to remain liquid throughout the mixed-phase ramp.
 
@@ -248,6 +267,7 @@ Table~\ref{tab:sppe-namelist-decisions} summarizes the physical or numerical rat
 \texttt{depr\_point\_frz = .false.} & Avoid artificial suppression after aerosol activation, when droplet water activity should be close to one. & \textbf{process-isolation} \\
 \texttt{enable\_nimax = .false.} & Remove the unphysical legacy ice-number limiter used in the released CESM2 microphysics. & \href{https://doi.org/10.1029/2025MS004967}{Duffy et al. (2025)}; \href{https://doi.org/10.1029/2021MS002776}{Zhu et al. (2022)} \\
 \texttt{limfacdu = 0.05} & Replace the broad ice limiter with a 5\% dust-number cap on the immersion-freezing source. & \href{https://doi.org/10.5194/gmd-16-1735-2023}{Gettelman et al. (2023)} \\
+\texttt{limfacdu\_niemand\_continuous = .true.} & Freeze the Niemand et al. (2012) frozen fraction of immersed dust every call instead of the capped classical-nucleation-theory rate; \texttt{limfacdu} is then inactive. & \href{https://doi.org/10.1175/JAS-D-11-0249.1}{Niemand et al. (2012)} \\
 \texttt{micro\_mg\_num\_steps = 8} & Use a converged microphysical substep length. & \href{https://doi.org/10.1029/2021MS002776}{Zhu et al. (2022)} \\
 \texttt{naai\_het\_also\_in\_mpc = .false.} & Prevent the cirrus ice-number target from leaking into mixed-phase clouds. & \textbf{process-isolation} \\
 \texttt{hclas\_du\_dep = 0.0} & Remove the minor deposition pathway from mixed-phase dust nucleation. & \href{https://doi.org/10.1029/2021RG000745}{Burrows et al. (2022)} \\
